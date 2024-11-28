@@ -28,7 +28,7 @@ This is terminal text editor.
 ## Build
 
 ```bash
-git clone <repo>
+git clone git@github.com:Pesec1/ninja.git
 ```
 
 ```bash
