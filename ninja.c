@@ -108,13 +108,15 @@ void enableRawMode() {
 int editorReadKey() {
   int nread;
   char c;
-  if ((nread = read(STDIN_FILENO, &c, 1)) != 1) {
+  while ((nread = read(STDIN_FILENO, &c, 1)) != 1) {
     if (nread == -1 && errno != EAGAIN) die("read");
   }
+
   if (c == '\x1b') {
     char seq[3];
-    if(read(STDIN_FILENO, &seq[0], 1) != 1) return '\x1b';
-    if(read(STDIN_FILENO, &seq[1], 1) != 1) return '\x1b';
+
+    if (read(STDIN_FILENO, &seq[0], 1) != 1) return '\x1b';
+    if (read(STDIN_FILENO, &seq[1], 1) != 1) return '\x1b';
 
     if (seq[0] == '[') {
       if (seq[1] >= '0' && seq[1] <= '9') {
@@ -611,7 +613,7 @@ char *editorPrompt(char *prompt, void(*callback)(char *, int)) {
 
     int c = editorReadKey();
     if (c == DEL || c == CTRL_KEY('h') || c == BACKSPACE) {
-      if (buflen != 0) buf[buflen] = '\0';
+      if (buflen != 0) buf[--buflen] = '\0';
     } else if (c == '\x1b') {
       editorSetStatusMessage("");
       if (callback) callback(buf, c);
@@ -634,6 +636,7 @@ char *editorPrompt(char *prompt, void(*callback)(char *, int)) {
     if (callback) callback(buf, c);
   }
 }
+
 void editorMoveCursor(int key) {
   erow *row = (E.cy >= E.numrows) ? NULL : &E.row[E.cy];
 
@@ -670,6 +673,7 @@ void editorMoveCursor(int key) {
     E.cx = rowlen;
   }
 }
+
 void editorPressedKey() {
   static int quit_times = NINJA_QUIT_TIMES;
 
@@ -678,9 +682,6 @@ void editorPressedKey() {
   /* TODO: make escape from mode with ESC */
   if (E.mode == INSERT) {
       switch(c) {
-      /* BUG: Inserting 0 constantly */
-        case 0:
-          break;
         case '\r':
           editorInsertNewLine();
           break;
@@ -704,7 +705,6 @@ void editorPressedKey() {
 
   if (E.mode == NORMAL) {
     switch(c) {
-      /* BUG: Inserting 'i' after setting mode to INESRT */
       /* NOTE: setting modes */
         case 'i':
         case 'a':
@@ -753,6 +753,9 @@ void editorPressedKey() {
       break;
     case CTRL_KEY('f'):
       editorFind();
+      break;
+    case ':':
+      editorPrompt(":%s", NULL);
       break;
   }
   quit_times = NINJA_QUIT_TIMES;
